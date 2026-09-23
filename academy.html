@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学院页面</title>
+    <script src="./echarts.min.js"></script>
+    <script src="./jquery.min.js"></script>
+</head>
+
+<body style="margin: 0;">
+    <!-- div 标签中我们是对窗口进行分区DOM容器 -->
+    <div id="academBox"
+        style="width: 100vw;height: 100vh;background: url(./全国高职院校状态总览图片/bcg.png);background-size: 100% 100%;position: fixed;">
+
+        <div id="academyTitle"
+            style="width: 100vw;height: 10vh; display: flex;justify-content: center;align-items: center;font-size: 30px;color: white;background:url(./全国高职院校状态总览图片/title.png);background-size: 100% 100%;">
+            计算机工程技术学院学生综合素质分数总览
+        </div>
+        <div id="academyConten" style="width: 100vw;height: 90vh;display: flex;justify-content: space-between;">
+            <div id="academyLeft"
+                style="width: 30.5vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+            <div id="academyCenter"
+                style="width: 37vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+            <div id="academyRight"
+                style="width: 30.5vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 在下面写js中的语句 -->
+    <script>
+        $.get('./studentData.json', function (ret) {
+
+            var totalScores = {}
+            var classNames = []
+            var echartsData = [];
+
+            // 输出各个班级里的数据
+            function classScore (ret) {
+                let classData = ret[className]
+                let a = 0
+                for (i = 0; i < classData.length; i++) {
+                    a += classData[i]['总分值']
+                }
+                return a
+            }
+            // 使用for...in循环遍历data对象的属性（班级名称）
+            for (var className in ret) {
+                if (ret.hasOwnProperty(className)) {
+                    // 遍历数据中的每个班级
+                    classNames.push(className)
+                    // 计算每个班级的总分值
+                    totalScores[className] = classScore(ret)
+                    // 输出每个班级的总分值，并取消小数点
+                    // console.log(className + "总分值：", totalScores[className].toFixed(0))      // toFixed 强制保留 0 位小数点
+                    // 排序
+                    echartsData.push({
+                        name: className, // 班级名称作为数据项的名称
+                        value: totalScores[className] // 总分值作为数据项的值
+                    });
+                }
+            }
+            // 根据总分值对echartsData进行排序
+            echartsData.sort((a, b) => a.value - b.value);
+
+
+            // 排序方法1：
+            // 将 totalScores 对象转换为数组，并根据总分值进行排序
+            // let sortedEntries = Object.entries(totalScores).sort((a, b) => b[1] - a[1]); // 降序排序，如果需要升序则 a[1] - b[1]
+            // 如果您需要将排序后的结果转换回对象（可选）
+            // let sortedTotalScores = Object.fromEntries(sortedEntries);
+            // 输出排序后的总分值
+            // sortedEntries.forEach(([className, totalScore]) => {
+            //     console.log(className + "总分值：", totalScore.toFixed(2));
+            // });
+
+            // 排序方法2：
+            // 将 totalScores 对象转换为数组，并根据总分值进行排序
+            // let sortedEntries = Object.keys(totalScores).sort(function (a, b) {
+            //     return totalScores[a] - totalScores[b];
+            // });
+            // for (var i = 0; i < sortedEntries.length; i++) {
+            //     var className = sortedEntries[i];
+            //     var totalScore = totalScores[className];
+            //     console.log('班级:', className, '总分值:', totalScore);
+            // }
+
+
+            var mychart = echarts.init(document.getElementById('academyLeft'))
+            var option = {
+                title: {
+                    text: '20计算机各班综合素质总分排名',
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                },
+                grid: {
+                    left: '2%',
+                    right: '2%',
+                    bottom: '4%',
+                    containLabel: true, // 确保标签不会被截断或溢出
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.8)', // 设置提示框背景色为半透明的黑色
+                    textStyle: {
+                        color: '#fff' // 设置提示框文本颜色为白色
+                    },
+                    axisPointer: {          // 鼠标移动到图标上会有 十字跟随鼠标,并且 x、y轴上会显示数据
+                        type: 'shadow',
+                        label: {
+                            backgroundColor: "red"      // 显示数据的背景颜色
+                        }
+                    }
+                },
+                xAxis: {
+                    type: "value",
+                    name: "总分",
+                    splitLine: {
+                        show: false // 隐藏 X 轴的网格线
+                    },
+                    axisLabel: {
+                        show: false, // 隐藏 x 轴的数据标签
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要的颜色
+                        }
+                    },
+                    nameGap: -20, // 名称与轴线之间的距离
+                    nameTextStyle: {
+                        color: '#ffffff', // 这里设置Y轴名称的颜色
+                        // 其他文本样式，如 fontSize, fontWeight 等也可以在这里设置
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                },
+                yAxis: {
+                    type: 'category',
+                    name: "班级",
+                    data: echartsData.map(item => item.name),
+                    axisLabel: {
+                        show: true,
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要颜色
+                        }
+                    },
+                    nameGap: 5, // 名称与轴线之间的距离
+                    nameTextStyle: {
+                        color: '#ffffff', // 这里设置Y轴名称的颜色
+                        // 其他文本样式，如 fontSize, fontWeight 等也可以在这里设置
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+
+                },
+                series: [
+                    {
+                        type: 'bar',
+                        data: echartsData.map(item => item.value),
+                        itemStyle: {
+                            color: '#0099FF'
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(125,152,196,2)'
+                            }
+                        },
+                        label: {
+                            show: true, // 显示标签
+                            position: 'right', // 标签位置，可以根据需要设置为 'right', 'bottom', 'left' 等
+                            fontSize: 15,
+                            formatter: function (params) {
+                                // 格式化标签内容，返回需要显示的字符串
+                                return params.value.toFixed(0); // 假设yData中的值是数字，这里保留两位小数
+                            }
+                        },
+                    }
+                ]
+            }
+            mychart.setOption(option)
+            mychart.on('click', function (params) {
+                console.log("params", params.name)
+                localStorage.setItem('className', params.name)
+                window.location.replace("http://127.0.0.1:5500/class.html")
+            })
+
+
+
+            var mychart2 = echarts.init(document.getElementById('academyCenter'))
+            //  每个班级的每个人的总分高于全部班级（整体）平均分的人数统计
+            function countStudentsAllAverage (ret) {
+                let totalScores = 0;
+                let StudentsSum = 0;
+
+                // 计算所有学生的总分和总人数
+                for (let className in ret) {
+                    if (ret.hasOwnProperty(className)) {
+                        const classData = ret[className];
+                        for (let i = 0; i < classData.length; i++) {
+                            totalScores += classData[i]['总分值'];
+                            StudentsSum++;
+                        }
+                    }
+                }
+
+                // 计算整体平均分
+                const overallAverageScore = totalScores / StudentsSum;
+                console.log('整体平均分:', overallAverageScore);
+
+                // 统计每个班级高于整体平均分的学生数
+                const aboveOverallAvgCounts = {};
+                for (let className in ret) {
+                    if (ret.hasOwnProperty(className)) {
+                        const classData = ret[className];
+                        let aboveAvgCount = 0;
+                        for (let i = 0; i < classData.length; i++) {
+                            if (classData[i]['总分值'] > overallAverageScore) {
+                                aboveAvgCount++;
+                            }
+                        }
+                        aboveOverallAvgCounts[className] = aboveAvgCount;
+                    }
+                }
+
+                // 打印结果
+                console.log('各班级高于整体平均分的学生人数:', aboveOverallAvgCounts);
+
+                // 返回结果
+                return aboveOverallAvgCounts;
+            }
+            // console.log(countStudentsAllAverage(ret))
+            // 调用函数并获取结果
+            const aboveOverallAvgCounts = countStudentsAllAverage(ret);
+            let pieData = [];
+            for (let className in aboveOverallAvgCounts) {
+                if (aboveOverallAvgCounts.hasOwnProperty(className)) {
+                    pieData.push({
+                        name: className,
+                        value: aboveOverallAvgCounts[className]
+                    });
+                }
+            }
+            var option2 = {
+                title: {
+                    text: '各班综合素质分数高于年级平均分占比',
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                    // top: '12%'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    // formatter: '{a} <br/>{b}: {c} ({d}%)', // 格式化提示框内容，显示名称、数据、百分比
+                    // formatter 详细解释
+                    // {a}：通常代表系列（series）的名称。
+                    // {b}：代表数据项的名称，通常对应于饼图的某个扇区标签（在 series.data 中定义的 name）。
+                    // {c}：代表数据项的值，对于饼图来说，这通常是某个扇区的数值大小。
+                    // {d}%：代表数据项的百分比。需要注意的是，为了让 {d} 正确显示百分比，你需要在 series 配置中启用百分比显示（通过 percent: 'percent'），并确保数据已经是以百分比形式给出的
+
+                    formatter: '{b}: {c} ({d}%)', // 格式化提示框内容，显示名称、数据、百分比
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    textStyle: {
+                        color: '#fff'
+                    },
+                    axisPointer: {
+                        type: 'cross',
+                        label: {
+                            backgroundColor: "red"
+                        }
+                    }
+                },
+                series: [
+                    {
+                        type: 'pie',
+                        radius: '60%',
+                        data: pieData,
+                        // 显示为百分比
+                        percent: 'percent',
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(125,152,196,2)'
+                            }
+                        }
+                    }
+                ]
+            }
+            mychart2.setOption(option2)
+            mychart2.on('click', function (params) {
+                console.log("params", params.name)
+                localStorage.setItem('className', params.name)
+                window.location.replace("http://127.0.0.1:5500/class.html")
+            })
+
+
+
+            var mychart3 = echarts.init(document.getElementById('academyRight'))
+            // 输出各个班级里的数据
+            var xData  // 用于存放班级的名称
+            xData = Object.keys(ret)  // 获取班级的每次，使用的是对象的键值对名称
+            // console.log("xData", xData)
+            // 定义一个数组，用于存放求得的每个班级的平均值
+            var yData = []
+            mydata = []
+
+            //forEach遍历数组中的数据，这里遍历xData里的班级名称 ，
+            //从而获取到每个班级的数据，进而在每个班级数据中拿到每个人的总分值，来计算班级总分值和平均值
+            xData.forEach((item) => {
+                // console.log(ret[item])
+                var sumScore = 0
+                for (i = 0; i < ret[item].length; i++) {
+                    sumScore += ret[item][i].总分值
+                }
+                yData.push(sumScore / ret[item].length)
+                console.log("sumScore平均值", sumScore / ret[item].length)
+                mydata.push({ name: item, average: sumScore / ret[item].length })
+            })
+
+            var option3 = {
+                title: {
+                    text: '20计算机各班综合素质平均分折线图',
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(0,0,0,0.8)', // 设置提示框背景色为半透明的黑色
+                    textStyle: {
+                        color: '#fff' // 设置提示框文本颜色为白色
+                    },
+                    axisPointer: {          // 鼠标移动到图标上会有 十字跟随鼠标,并且 x、y轴上会显示数据
+                        type: 'cross',
+                        label: {
+                            backgroundColor: "red"      // 显示数据的背景颜色
+                        }
+                    }
+                },
+                xAxis: {
+                    type: "category",
+                    data: xData,
+                    name: "班级",
+                    axisLabel: {
+                        show: true,
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要颜色
+                        }
+                    },
+                    nameTextStyle: {
+                        color: '#ffffff', // 这里设置Y轴名称的颜色
+                        // 其他文本样式，如 fontSize, fontWeight 等也可以在这里设置
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                },
+                yAxis: {
+                    type: "value",
+                    name: "平均分",
+                    axisLabel: {
+                        show: true,
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要颜色
+                        }
+                    },
+                    nameTextStyle: {
+                        color: '#ffffff', // 这里设置Y轴名称的颜色
+                        // 其他文本样式，如 fontSize, fontWeight 等也可以在这里设置
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                },
+                series: [
+                    {
+                        type: 'line',
+                        radius: '50%',
+                        data: yData,
+                        //  data: mydata.map(item => item.average), // 从mydata中提取平均分作为系列数据
+                        smooth: true, // 使折线平滑 ||平滑线
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(125,152,196,2)'
+                            }
+                        },
+                        label: {
+                            show: true, // 显示标签
+                            position: 'top', // 标签位置，可以根据需要设置为 'right', 'bottom', 'left' 等
+                            formatter: function (params) {
+                                // 格式化标签内容，返回需要显示的字符串
+                                return params.name + " : " + params.value.toFixed(0); // 假设yData中的值是数字，这里保留两位小数
+                            }
+                        },
+                    }
+                ],
+
+            }
+            mychart3.setOption(option3)
+            mychart3.on('click', function (params) {
+                console.log("params", params.name)
+                localStorage.setItem('className', params.name)
+                window.location.replace("http://127.0.0.1:5500/class.html")
+            })
+
+        })
+    </script>
+
+</body>
+
+</html>

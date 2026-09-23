@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级页面</title>
+    <script src="./echarts.min.js"></script>
+    <script src="./jquery.min.js"></script>
+</head>
+
+<body style="margin: 0;">
+    <!-- div 标签中我们是对窗口进行分区DOM容器 -->
+    <div id="classBox"
+        style="width: 100vw;height: 100vh;background: url(./全国高职院校状态总览图片/bcg.png);background-size: 100% 100%;position: fixed;">
+
+        <div id="classTitle" style="width: 100vw;height: 10vh;display: flex;justify-content: space-between;">
+            <!-- cursor: pointer; 鼠标显示手形状-->
+            <div id="backup"
+                style="width: 5vw;height: 5vh;background-color:rgba(81, 139, 219, 0.863);display: flex;justify-content: center;align-items: center; font-size: 20px;color: white;cursor: pointer;"
+                onclick="backup()">
+                返回
+            </div>
+            <!-- 这里的页面标题要通过第一个页面传递过来的班级 -->
+            <div id="titleText"
+                style="width: 95vw;height: 10vh; display: flex;justify-content: center;align-items: center;font-size: 30px;color: white;background:url(./全国高职院校状态总览图片/title.png);background-size: 100% 100%;">
+
+            </div>
+
+        </div>
+        <div id="classConten" style="width: 100vw;height: 90vh;display: flex;justify-content: space-between;">
+            <div id="classLeft"
+                style="width: 30vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+            <div id="classCenter"
+                style="width: 37vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+            <div id="classRight"
+                style="width: 31vw;height: 90vh;background-color: rgba(170, 179, 170, 0.096);color: white;border: solid;border-width: 0.4vh;">
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- 在下面写js中的语句 -->
+
+    <script>
+
+        function backup () {
+            // window.open("http://127.0.0.1:5500/academy.html")    // 新打开一个窗口 或者 重新打开一个窗口
+            window.location.replace("http://127.0.0.1:5500/academy.html")
+        }
+        // 通过窗口的应用程序中的本地存储传来的数据来确定对于的 DOM 容器里的文本
+        document.getElementById('titleText').textContent = localStorage.className + '学生综合素质分数总览'
+
+
+        $.get('./studentData.json', function (ret) {
+            var localClassName = localStorage.getItem('className')
+            let classData = ret[localClassName]
+
+            // 输出各个班级里的数据
+            function classScore (classData) {
+                var scores = {
+                    '思想政治': 0,
+                    '身心健康': 0,
+                    '创新创业': 0,
+                    '技术技能': 0,
+                    '志愿服务': 0,
+                    '人文艺术': 0,
+                    '劳动实践': 0
+                };
+                var zrs = classData.length
+                console.log(zrs)
+                for (var i = 0; i < zrs; i++) {
+                    var student = classData[i];
+                    for (var subject in scores) {
+                        scores[subject] += student[subject];
+                    }
+                }
+                var averageScores = {};
+                for (var subject in scores) {
+                    averageScores[subject] = scores[subject] / zrs;
+                }
+                return averageScores;
+            }
+
+            mydata = []
+            // 输出每个班级的平均成绩
+            for (var className in ret) {
+                console.log("班级: " + className);
+                // 我们直接对classData调用classScore函数来获取平均成绩
+                var averageScores = classScore(classData);
+                // 可以不要 本段代码是在 控制器中查看 当前选择班级的数据
+                for (var subject in averageScores) {
+                    // console.log(subject + ": " + averageScores[subject].toFixed(2));
+                }
+                console.log("---");
+            }
+
+            // 构造用于echarts的数据 用mydata 给echarts赋予 x轴名称和y轴的数值
+            for (var subject in averageScores) {
+                mydata.push({ name: subject, average: averageScores[subject] });
+            }
+
+            var mychart4 = echarts.init(document.getElementById('classLeft'))
+            var option4 = {
+                title: {
+                    text: `${localClassName} 综合素质平均成绩情况`,
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.8)', // 设置提示框背景色为半透明的黑色
+                    textStyle: {
+                        color: '#fff' // 设置提示框文本颜色为白色
+                    },
+                    axisPointer: {          // 鼠标移动到图标上会有 十字跟随鼠标,并且 x、y轴上会显示数据
+                        type: 'cross',
+                        label: {
+                            backgroundColor: "red"      // 显示数据的背景颜色
+                        }
+                    }
+                },
+                xAxis: {
+                    type: "category",
+                    data: mydata.map(item => item.name),
+                    axisLabel: {
+                        show: true,
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要颜色
+                        }
+                    },
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '平均分',
+                    nameTextStyle: {
+                        color: '#ffffff', // 这里设置Y轴名称的颜色
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    },
+                    axisLabel: {
+                        show: true,
+                        textStyle: {
+                            color: '#ffffff' // 这里设置为您想要颜色
+                        }
+                    },
+                },
+                series: [
+                    {
+                        type: 'bar',
+                        // data: Object.values(averageScores),
+                        data: mydata.map(item => item.average),
+                        itemStyle: {
+                            color: '#0099FF'
+                        },
+                        label: {
+                            show: true, // 显示标签
+                            position: 'top', // 标签位置，可以根据需要设置为 'right', 'bottom', 'left' 等
+                            fontSize: 15,
+                            formatter: function (params) {
+                                // 格式化标签内容，返回需要显示的字符串
+                                return params.value.toFixed(0); // 假设yData中的值是数字，这里保留两位小数
+                            }
+                        }
+                    }
+                ]
+            }
+
+            mychart4.setOption(option4)
+            mychart4.on('click', function (params) {
+                console.log("params", params.name)
+                localStorage.setItem('ScoreName', params.name)
+                window.location.replace("http://127.0.0.1:5500/score.html")
+            })
+
+
+            var mychart5 = echarts.init(document.getElementById('classCenter'))
+            function classbhg (classData) {
+                var scores = {
+                    '思想政治': 0,
+                    '身心健康': 0,
+                    '创新创业': 0,
+                    '技术技能': 0,
+                    '志愿服务': 0,
+                    '人文艺术': 0,
+                    '劳动实践': 0
+                };
+                var totalStudents = 0;
+                var qualifiedStudents = 0;      // 合格人数
+                var unqualifiedStudents = 0;   // 不合格人数
+
+                for (var i = 0; i < classData.length; i++) {
+                    var student = classData[i];
+                    var studentTotalScore = 0;      // 学生总分
+                    var isQualified = true;
+
+                    for (var subject in scores) {
+                        scores[subject] += student[subject];
+                        studentTotalScore += student[subject];
+
+                        // 判断单科是否合格
+                        if ((subject === '志愿服务' && student[subject] < 8) ||
+                            (subject === '劳动实践' && student[subject] < 4) ||
+                            (student[subject] < 6)) {
+                            isQualified = false;    // 科目不合格
+                        }
+                    }
+
+                    // 累加学生总数
+                    totalStudents++;
+
+                    // 判断学生是否合格
+                    if (isQualified) {
+                        qualifiedStudents++;
+                    } else {
+                        unqualifiedStudents++;
+                    }
+
+                    // 判断学生总分数是否低于56
+                    if (studentTotalScore < 56) {
+                        unqualifiedStudents++; // 也可以单独记录这部分学生
+                    }
+                }
+                // 返回科目总分、合格与不合格学生数
+                return {
+                    scores: scores,
+                    totalStudents: totalStudents,
+                    qualifiedStudents: qualifiedStudents,
+                    unqualifiedStudents: unqualifiedStudents
+                };
+            }
+
+            var classResult = classbhg(classData); // 计算成绩
+            var qualifiedCount = classResult.qualifiedStudents
+            var unqualifiedCount = classResult.unqualifiedStudents
+
+            var option5 = {
+                title: {
+                    text: `${localClassName} 综合素质分数达到毕业分数占比`,
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                },
+                legend: {
+                    textStyle: {
+                        color: '#fff', // 图例文字颜色
+                        fontSize: 14 // 图例文字大小
+                    },
+                    selectedMode: 'multiple', // 图例选择模式，'single'表示单选，'multiple'表示多选
+                    orient: 'horizontal', // 图例列表的布局朝向，可选值为'horizontal'或'vertical'
+                    left: 'left', // 图例组件离容器左侧的距离
+                    top: '10%', // 图例组件离容器上侧的距离
+                    backgroundColor: 'rgba(0,0,0,0.3)', // 图例背景色
+                    borderRadius: 4, // 图例边框圆角
+                    padding: [5, 10] // 图例内边距
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)', // 格式化提示框内容，显示名称、数据、百分比
+                    backgroundColor: 'rgba(0,0,0,0.8)', // 设置提示框的背景色为半透明的黑色（rgba中的最后一个参数是透明度，0.8表示80%的不透明度）
+                    textStyle: { // 提示框中的文本样式设置
+                        color: '#fff' // 设置提示框中文本的颜色为白色
+                    },
+                    axisPointer: { // 鼠标悬停时，用于指示当前数据点位置的指示器配置
+                        type: 'cross', // 指示器的类型，'cross' 表示显示十字准线
+                        label: { // 指示器上标签的样式设置
+                            backgroundColor: "red" // 设置标签的背景颜色为红色
+                        }
+                    }
+                },
+                series: [
+                    {
+                        type: 'pie',
+                        radius: '60%',
+                        data: [{ name: '不合格', value: unqualifiedCount }, { name: '合格', value: qualifiedCount }],
+                        // 显示为百分比
+                        percent: 'percent',
+                        label: {
+                            show: "true",
+                            position: "inside",
+                            formatter: function (params) {
+                                console.log("params", params)
+                                var content = `${params.data.name} : ${params.data.value} 人`
+                                return content
+                            }
+                        }
+                    }
+                ]
+            }
+            mychart5.setOption(option5)
+            // mychart5.on('click', function (params) {
+            //     console.log("params", params.name)
+            //     localStorage.setItem('ScoreName', params.name)
+            //     window.location.replace("http://127.0.0.1:5500/score.html")
+            // })
+
+
+
+
+            var mychart6 = echarts.init(document.getElementById('classRight'))
+            // 方法二：各个项目总分占比
+            // echartsData = []
+            // var totalScore = 0;
+            // var scores = {
+            //     '思想政治': 0,
+            //     '身心健康': 0,
+            //     '创新创业': 0,
+            //     '技术技能': 0,
+            //     '志愿服务': 0,
+            //     '人文艺术': 0,
+            //     '劳动实践': 0
+            // };
+            // var zrs = classData.length
+            // // 计算总分和每个学科的分数
+            // for (var i = 0; i < zrs; i++) {
+            //     var student = classData[i];
+            //     for (var subject in scores) {
+            //         scores[subject] += student[subject];
+            //         totalScore += student[subject];
+            //     }
+            // }
+            // // 计算每个学科的分数占比
+            // var scorePercentage = {};
+            // for (var subject in scores) {
+            //     scorePercentage[subject] = (scores[subject] / totalScore) * 100;
+            // }
+            // // 创建饼图的数据项
+            // var echartsData = Object.keys(scorePercentage).map(function (subject) {
+            //     return {
+            //         name: subject, // 学科名称作为数据项的名称
+            //         value: scorePercentage[subject] // 分数占比作为数据项的值
+            //     };
+            // });
+
+
+            echartsData = []
+            function classSumScore (classData) {
+                var scores = {
+                    '思想政治': 0,
+                    '身心健康': 0,
+                    '创新创业': 0,
+                    '技术技能': 0,
+                    '志愿服务': 0,
+                    '人文艺术': 0,
+                    '劳动实践': 0
+                };
+                var zrs = classData.length
+                for (var i = 0; i < zrs; i++) {
+                    var student = classData[i];
+                    for (var subject in scores) {
+                        scores[subject] += student[subject];
+                    }
+                }
+                return scores
+            }
+            for (var className in ret) {
+                var scores = classSumScore(classData);
+                var echartsData = Object.keys(scores).map(function (subject) {
+                    return {
+                        name: subject, // 学科名称作为数据项的名称
+                        value: scores[subject] // 各科总分作为数据项的值
+                    };
+                });
+            }
+
+            var option6 = {
+                title: {
+                    text: `${localClassName} 综合素质各项总分占比情况`,
+                    left: 'center',
+                    textStyle: {
+                        color: 'white',
+                        fontSize: 25
+                    }
+                },
+                legend: {
+                    textStyle: {
+                        color: '#fff', // 图例文字颜色
+                        fontSize: 14 // 图例文字大小
+                    },
+                    selectedMode: 'multiple', // 图例选择模式，'single'表示单选，'multiple'表示多选
+                    orient: 'horizontal', // 图例列表的布局朝向，可选值为'horizontal'或'vertical'
+                    left: 'center', // 图例组件离容器左侧的距离
+                    top: '10%', // 图例组件离容器上侧的距离
+                    backgroundColor: 'rgba(0,0,0,0.3)', // 图例背景色
+                    borderRadius: 4, // 图例边框圆角
+                    padding: [5, 10] // 图例内边距
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)', // 格式化提示框内容，显示名称、数据、百分比
+                    backgroundColor: 'rgba(0,0,0,0.8)', // 设置提示框的背景色为半透明的黑色（rgba中的最后一个参数是透明度，0.8表示80%的不透明度）
+                    textStyle: { // 提示框中的文本样式设置
+                        color: '#fff' // 设置提示框中文本的颜色为白色
+                    },
+                    axisPointer: { // 鼠标悬停时，用于指示当前数据点位置的指示器配置
+                        type: 'cross', // 指示器的类型，'cross' 表示显示十字准线
+                        label: { // 指示器上标签的样式设置
+                            backgroundColor: "red" // 设置标签的背景颜色为红色
+                        }
+                    }
+                },
+                series: [
+                    {
+                        type: 'pie',
+                        radius: '60%',
+                        data: echartsData,
+                        // 显示为百分比
+                        percent: 'percent',
+                    }
+                ]
+            }
+            mychart6.setOption(option6)
+            mychart6.on('click', function (params) {
+                console.log("params", params.name)
+                localStorage.setItem('ScoreName', params.name)
+                window.location.replace("http://127.0.0.1:5500/score.html")
+            })
+
+        })
+
+
+    </script>
+
+
+</body>
+
+</html>
